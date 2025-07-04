@@ -1,0 +1,138 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Business Calendar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .day:hover { cursor: pointer; background-color: #f3f4f6; }
+    .day.noted:hover { background-color: #f97316 !important; } /* orange-500 */
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-4xl font-bold text-center mb-6">Business Calendar</h1>
+
+    <div class="flex justify-between items-center mb-4">
+      <button id="prevMonth" class="bg-gray-300 hover:bg-gray-400 text-sm px-3 py-1 rounded">← Prev</button>
+      <h2 id="currentMonth" class="text-xl font-semibold"></h2>
+      <button id="nextMonth" class="bg-gray-300 hover:bg-gray-400 text-sm px-3 py-1 rounded">Next →</button>
+    </div>
+
+    <div id="calendar" class="grid grid-cols-7 gap-2 bg-white p-4 rounded shadow"></div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 hidden">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+      <h2 class="text-xl font-semibold mb-2">Info for <span id="modal-date"></span></h2>
+      <textarea id="modal-text" class="w-full h-32 p-2 border rounded" placeholder="Enter your notes..."></textarea>
+      <div class="mt-4 flex justify-between items-center">
+        <button id="deleteBtn" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Delete</button>
+        <div class="space-x-2">
+          <button id="saveBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Save</button>
+          <button id="cancelBtn" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const calendar = document.getElementById("calendar");
+    const modal = document.getElementById("modal");
+    const modalDate = document.getElementById("modal-date");
+    const modalText = document.getElementById("modal-text");
+    const saveBtn = document.getElementById("saveBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+    const prevMonthBtn = document.getElementById("prevMonth");
+    const nextMonthBtn = document.getElementById("nextMonth");
+    const currentMonthDisplay = document.getElementById("currentMonth");
+
+    let selectedDate = null;
+    let viewDate = new Date();
+
+    function renderCalendar() {
+      const year = viewDate.getFullYear();
+      const month = viewDate.getMonth();
+
+      currentMonthDisplay.textContent = viewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+      calendar.innerHTML = "";
+      const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      weekdays.forEach(day => {
+        const cell = document.createElement("div");
+        cell.className = "text-center font-bold text-gray-700";
+        cell.textContent = day;
+        calendar.appendChild(cell);
+      });
+
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      let firstDay = new Date(year, month, 1).getDay();
+      firstDay = firstDay === 0 ? 6 : firstDay - 1; // shift Sunday to end
+
+      for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement("div");
+        calendar.appendChild(empty);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement("div");
+        const key = `${year}-${month + 1}-${day}`;
+        const saved = localStorage.getItem(key);
+
+        cell.className = `day p-2 border rounded text-center text-sm flex flex-col items-center justify-start h-24 ${saved ? 'bg-purple-500 text-white noted' : 'bg-gray-50'}`;
+
+        const dayLabel = document.createElement("div");
+        dayLabel.className = "font-semibold";
+        dayLabel.textContent = day;
+        cell.appendChild(dayLabel);
+
+        if (saved) {
+          const note = document.createElement("div");
+          note.className = "mt-1 text-xs text-white overflow-hidden break-words max-h-16 text-center";
+          note.textContent = saved;
+          cell.appendChild(note);
+        }
+
+        cell.addEventListener("click", () => {
+          selectedDate = key;
+          modalDate.textContent = key;
+          modalText.value = saved || "";
+          modal.classList.remove("hidden");
+        });
+
+        calendar.appendChild(cell);
+      }
+    }
+
+    saveBtn.addEventListener("click", () => {
+      localStorage.setItem(selectedDate, modalText.value);
+      modal.classList.add("hidden");
+      renderCalendar();
+    });
+
+    deleteBtn.addEventListener("click", () => {
+      localStorage.removeItem(selectedDate);
+      modal.classList.add("hidden");
+      renderCalendar();
+    });
+
+    cancelBtn.addEventListener("click", () => {
+      modal.classList.add("hidden");
+    });
+
+    prevMonthBtn.addEventListener("click", () => {
+      viewDate.setMonth(viewDate.getMonth() - 1);
+      renderCalendar();
+    });
+
+    nextMonthBtn.addEventListener("click", () => {
+      viewDate.setMonth(viewDate.getMonth() + 1);
+      renderCalendar();
+    });
+
+    renderCalendar();
+  </script>
+</body>
+</html>
